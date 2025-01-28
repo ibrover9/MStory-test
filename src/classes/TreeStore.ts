@@ -1,4 +1,3 @@
-// TreeStore на TypeScript
 interface Item {
   id: string | number;
   parent: string | number | null;
@@ -98,6 +97,22 @@ class TreeStore {
   updateItem(updatedItem: Item): void {
     this.removeItem(updatedItem.id);
     this.addItem(updatedItem);
+  }
+
+  getNextId(): string | number {
+    let nextId: number | string;
+
+    const numericIds = this.items
+      .filter((item) => typeof item.id === "number")
+      .map((item) => item.id as number);
+
+    if (numericIds.length > 0) {
+      nextId = Math.max(...numericIds) + 1;
+    } else {
+      nextId = `item-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+
+    return nextId;
   }
 }
 
