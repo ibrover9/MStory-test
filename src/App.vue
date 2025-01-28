@@ -1,5 +1,9 @@
-<script setup lang="ts"></script>
+<script setup>
+import HierarchicalTable from "./views/HierarchicalTable.vue";
+</script>
 
-<template>1</template>
+<template>
+  <div><HierarchicalTable /></div>
+</template>
 
 <style scoped></style>
