@@ -42,13 +42,15 @@ export default {
   color: white;
   background-color: red;
   border: 2px solid red;
-  border-radius: 5px;
-  padding: 8px 16px;
+
+  padding: 2px 14px 2px 5px;
   font-size: 14px;
   font-weight: bold;
   text-transform: uppercase;
   cursor: pointer;
   transition: background-color 0.3s, transform 0.2s;
+  border-radius: 100%;
+  width: 10%;
 }
 
 .deleteNodeBtn:hover {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button @click="deselectRows">deselect rows</button>
+    <button @click="toggleOptionColumn">Показать/Скрыть Option</button>
     <div class="ag-theme-alpine" style="height: 600px; width: 100%">
       <ag-grid-vue
         class="ag-theme-alpine"
@@ -10,7 +10,6 @@
         :getDataPath="getDataPath"
         :autoGroupColumnDef="autoGroupColumnDef"
         :groupDefaultExpanded="-1"
-        :rowSelection="'multiple'"
         :animateRows="true"
         @cell-clicked="cellWasClicked"
         @grid-ready="onGridReady"
@@ -28,7 +27,6 @@ import { TreeDataModule } from "ag-grid-enterprise";
 import { ClientSideRowModelModule } from "ag-grid-enterprise";
 import OptionsTree from "@/components/OptionsTree.vue";
 import { toRaw } from "vue";
-
 import TreeStore from "@/classes/TreeStore";
 
 ModuleRegistry.registerModules([
@@ -51,18 +49,17 @@ const treeStore = new TreeStore([
   { id: 10, parent: 5, label: "Айтем 10" },
 ]);
 
-const history = ref([]);
-let currentHistoryIndex = ref(-1);
-
 const rowData = ref([]);
 const gridApi = ref(null);
 
+// Столбцы для отображения/скрытия
 const columnDefs = ref([
   {
     field: "test",
     headerName: "Option",
     editable: true,
     cellRenderer: OptionsTree,
+    hide: true, // Изначально скрыт
   },
   {
     field: "category",
@@ -74,7 +71,6 @@ const columnDefs = ref([
     headerName: "Название",
     editable: true,
   },
-
   {},
 ]);
 
@@ -82,12 +78,6 @@ const autoGroupColumnDef = ref({
   headerName: "Группа",
   cellRendererParams: { suppressCount: true },
 });
-
-const isEditMode = ref(false);
-
-const toggleEditMode = () => {
-  isEditMode.value = !isEditMode.value;
-};
 
 const getDataPath = computed(() => {
   return (data) => data.path;
@@ -114,22 +104,51 @@ const loadData = () => {
   });
 };
 
+const toggleOptionColumn = () => {
+  console.log("Текущий gridApi:", gridApi.value);
+
+  if (gridApi.value) {
+    // Получаем текущее состояние столбцов
+    const columnState = gridApi.value.getColumnState();
+
+    // Ищем столбец с field "test"
+    const optionColumn = columnState.find((col) => col.colId === "test");
+
+    if (optionColumn) {
+      // Изменяем свойство hide для столбца
+      optionColumn.hide = !optionColumn.hide;
+
+      // Применяем обновленное состояние
+      gridApi.value.applyColumnState({
+        state: columnState,
+        applyOrder: true, // Применяем порядок столбцов, если нужно
+      });
+
+      console.log("Обновлены columnDefs:", columnState);
+    } else {
+      console.error('Столбец с colId "test" не найден');
+    }
+  } else {
+    console.error("gridApi не инициализирован.");
+  }
+};
+
+const anotherButtonAction = () => {
+  console.log("Другая кнопка была нажата");
+};
+
 const cellWasClicked = (event) => {
   console.log("Cell clicked:", event);
 };
 
 const onGridReady = (params) => {
+  console.log("onGridReady: ", params);
   gridApi.value = params.api;
-};
-
-const deselectRows = (e) => {
-  gridApi.value.deselectAll();
+  console.log("Grid API methods:", Object.keys(gridApi.value)); // Выведет все доступные методы
 };
 
 onMounted(() => {
   loadData();
-  const rawData = toRaw(rowData.value);
-  console.log(rawData);
 });
 </script>
 
