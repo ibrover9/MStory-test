@@ -1,13 +1,6 @@
 <template>
   <div>
-    <button id="toggleEditMode" @click="toggleEditMode">
-      Переключить режим редактирования
-    </button>
-    <div v-if="isEditMode">
-      <button @click="addChildNode">Добавить дочерний элемент</button>
-      <button @click="undoChanges" :disabled="!canUndo">Назад</button>
-      <button @click="redoChanges" :disabled="!canRedo">Вперед</button>
-    </div>
+    <button @click="deselectRows">deselect rows</button>
     <div class="ag-theme-alpine" style="height: 600px; width: 100%">
       <ag-grid-vue
         class="ag-theme-alpine"
@@ -17,8 +10,10 @@
         :getDataPath="getDataPath"
         :autoGroupColumnDef="autoGroupColumnDef"
         :groupDefaultExpanded="-1"
-        :rowSelection="{ enableClickSelection: true }"
-        :editType="'fullRow'"
+        :rowSelection="'multiple'"
+        :animateRows="true"
+        @cell-clicked="cellWasClicked"
+        @grid-ready="onGridReady"
       />
     </div>
   </div>
@@ -27,11 +22,12 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { AgGridVue } from "ag-grid-vue3";
-import { ModuleRegistry } from "ag-grid-community";
+import { ModuleRegistry, RowSelectionModule } from "ag-grid-community";
 import { AllCommunityModule } from "ag-grid-community";
 import { TreeDataModule } from "ag-grid-enterprise";
 import { ClientSideRowModelModule } from "ag-grid-enterprise";
 import OptionsTree from "@/components/OptionsTree.vue";
+import { toRaw } from "vue";
 
 import TreeStore from "@/classes/TreeStore";
 
@@ -59,34 +55,28 @@ const history = ref([]);
 let currentHistoryIndex = ref(-1);
 
 const rowData = ref([]);
+const gridApi = ref(null);
+
 const columnDefs = ref([
-  { field: "category", headerName: "Категория", editable: true },
-  { field: "label", headerName: "Название", editable: true },
   {
-    headerName: "Действия",
-    cellRendererFramework: (params) => {
-      if (isEditMode.value) {
-        return h(ActionButtons, {
-          nodeData: params.node.data, // Передаем данные узла в компонент
-          onAddChild: (id) => addChildNode1(id), // Привязываем метод добавления
-          onDeleteNode: (id) => deleteNode1(id), // Привязываем метод удаления
-        });
-      }
-      return null;
-    },
+    field: "test",
+    headerName: "Option",
+    editable: true,
+    cellRenderer: OptionsTree,
   },
+  {
+    field: "category",
+    headerName: "Категория",
+    editable: true,
+  },
+  {
+    field: "label",
+    headerName: "Название",
+    editable: true,
+  },
+
+  {},
 ]);
-
-// Пример методов для добавления и удаления
-const addChildNode1 = (id) => {
-  console.log(`Добавить дочерний элемент для ID ${id}`);
-  // Логика добавления узла
-};
-
-const deleteNode1 = (id) => {
-  console.log(`Удалить узел с ID ${id}`);
-  // Логика удаления узла
-};
 
 const autoGroupColumnDef = ref({
   headerName: "Группа",
@@ -124,74 +114,22 @@ const loadData = () => {
   });
 };
 
-const addChildNode = (parentId) => {
-  const newId = treeStore.getNextId();
-  treeStore.addNode({
-    id: newId,
-    parent: parentId,
-    label: `Новый элемент ${newId}`,
-  });
-
-  const newNode = {
-    id: newId,
-    label: `Новый элемент ${newId}`,
-    category: "Элемент",
-    path: [...treeStore.getNodePath(parentId), `Новый элемент ${newId}`],
-  };
-
-  rowData.value.push(newNode);
-  addHistory({ action: "add", node: newNode });
+const cellWasClicked = (event) => {
+  console.log("Cell clicked:", event);
 };
 
-function deleteNode1(id) {
-  const nodeToDelete = rowData.value.find((node) => node.id === id);
-  if (nodeToDelete) {
-    const children = treeStore.getAllChildren(id);
-    children.push(nodeToDelete); // Добавляем родительский элемент
-    treeStore.removeItem(id);
-    rowData.value = rowData.value.filter(
-      (node) => !children.some((child) => child.id === node.id)
-    );
-    addHistory({ action: "delete", node: nodeToDelete });
-  }
-}
-
-const addHistory = (action, node) => {
-  history.value.push({ action, node });
-  currentHistoryIndex.value = history.value.length - 1;
+const onGridReady = (params) => {
+  gridApi.value = params.api;
 };
 
-const undoChanges = () => {
-  if (canUndo) {
-    const lastChange = history.value[currentHistoryIndex.value];
-    if (lastChange.action === "add") {
-      deleteNode(lastChange.node.id); // Реализуй логику удаления последнего добавленного узла.
-    } else if (lastChange.action === "delete") {
-      addChildNode(lastChange.node.parent); // Повторно добавляем удаленный узел.
-    }
-    currentHistoryIndex.value--;
-  }
+const deselectRows = (e) => {
+  gridApi.value.deselectAll();
 };
-
-const redoChanges = () => {
-  if (canRedo) {
-    currentHistoryIndex.value++;
-    const nextChange = history.value[currentHistoryIndex.value];
-    if (nextChange.action === "add") {
-      addChildNode(nextChange.node.parent); // Повторно добавляем добавленный узел.
-    } else if (nextChange.action === "delete") {
-      deleteNode(nextChange.node.id); // Повторно удаляем узел.
-    }
-  }
-};
-
-const canUndo = computed(() => currentHistoryIndex.value >= 0);
-const canRedo = computed(
-  () => currentHistoryIndex.value < history.value.length - 1
-);
 
 onMounted(() => {
   loadData();
+  const rawData = toRaw(rowData.value);
+  console.log(rawData);
 });
 </script>
 

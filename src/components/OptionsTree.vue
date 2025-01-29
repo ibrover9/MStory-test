@@ -1,31 +1,63 @@
 <template>
   <div>
-    <button class="addChildBtn" @click="addChildNode(nodeData.id)">+</button>
-    <button class="deleteNodeBtn" @click="deleteNode1(nodeData.id)">x</button>
+    <button class="deleteNodeBtn" @click="deleteNode">x</button>
   </div>
 </template>
 
 <script>
+import { toRaw } from "vue";
+
 export default {
-  props: {
-    nodeData: Object,
-  },
-  methods: {
-    addChildNode(id) {
-      this.$emit("addChild", id);
-    },
-    deleteNode1(id) {
-      this.$emit("deleteNode", id);
-    },
+  props: ["params"],
+  setup(props) {
+    const { params } = props;
+    const proxy = params.data;
+    const date = toRaw(proxy);
+    const collectAllChildren = (node) => {
+      let nodesToDelete = [node.data];
+      if (node.childrenAfterGroup) {
+        node.childrenAfterGroup.forEach((childNode) => {
+          nodesToDelete = nodesToDelete.concat(collectAllChildren(childNode));
+        });
+      }
+      return nodesToDelete;
+    };
+    const deleteNode = () => {
+      const nodesToRemove = collectAllChildren(params.node);
+      params.api.applyTransaction({ remove: nodesToRemove });
+    };
+
+    return { date, deleteNode };
   },
 };
 </script>
 
-<style scoped>
+<style>
 .addChildBtn {
-  /* Стили для кнопки добавления */
+  margin-right: 8px;
+  color: green;
 }
 .deleteNodeBtn {
-  /* Стили для кнопки удаления */
+  margin-left: 8px;
+  color: white;
+  background-color: red;
+  border: 2px solid red;
+  border-radius: 5px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.deleteNodeBtn:hover {
+  background-color: darkred;
+  transform: scale(1.05);
+}
+
+.deleteNodeBtn:active {
+  background-color: crimson;
+  transform: scale(0.95);
 }
 </style>
