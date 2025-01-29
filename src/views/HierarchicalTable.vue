@@ -1,6 +1,8 @@
 <template>
   <div>
-    <button @click="toggleOptionColumn">Показать/Скрыть Option</button>
+    <button @click="toggleOptionColumn" class="toggle-btn">
+      Показать/Скрыть Option
+    </button>
     <div class="ag-theme-alpine" style="height: 600px; width: 100%">
       <ag-grid-vue
         class="ag-theme-alpine"
@@ -156,5 +158,24 @@ onMounted(() => {
 .ag-theme-alpine {
   height: 100%;
   width: 100%;
+}
+
+.toggle-btn {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
+}
+
+.toggle-btn:hover {
+  background-color: #0056b3;
+}
+
+.toggle-btn:active {
+  background-color: #003f7f;
 }
 </style>
